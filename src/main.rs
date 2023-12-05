@@ -15,7 +15,7 @@ mod debug;
 mod game;
 // mod health;
 mod log;
-// mod physics;
+mod physics;
 // mod player;
 // mod terrain;
 // mod ui;

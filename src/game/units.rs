@@ -1,43 +1,199 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
-use crate::game::input::PlayerInput;
+use crate::{
+    game::input::PlayerInput,
+    physics::Velocity,
+};
 
 pub struct UnitsPlugin;
 
 impl Plugin for UnitsPlugin {
     fn build(&self, app: &mut App) {
+        app
+            .register_type::<SwarmParent>()
+            .add_systems(Update, shooter_flock_movement);
     }
 }
 
-#[derive(Component)]
-pub struct SwarmParent;
+#[derive(Component, Reflect)]
+pub struct SwarmParent {
+    pub separation: f32,
+    pub alignment: f32,
+    pub cohesion: f32,
+    pub separation_dist: f32,
+    pub cohesion_dist: f32,
+    pub max_speed: f32,
+    pub max_force: f32,
+}
+
+impl SwarmParent {
+    pub fn new() -> Self {
+        Self {
+            separation: 1.0,
+            alignment: 1.0,
+            cohesion: 1.0,
+            separation_dist: 80.0,
+            cohesion_dist: 80.0,
+            max_speed: 300.0,
+            max_force: 4.5,
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct BasicShooter {
 }
 
-pub fn spawn_swarm(commands: &mut Commands) {
-    let shape = shapes::RegularPolygon {
-        sides: 3,
-        feature: RegularPolygonFeature::Radius(40.0),
-        ..default()
-    };
+#[derive(Bundle)]
+pub struct BasicShooterBundle {
+    name: Name,
+    shooter: BasicShooter,
+    velocity: Velocity,
+    shape: ShapeBundle,
+    fill: Fill,
+}
 
+impl BasicShooterBundle {
+    pub fn new(pos: Vec2) -> Self {
+        let shape = shapes::RegularPolygon {
+            sides: 3,
+            feature: RegularPolygonFeature::Radius(20.0),
+            ..default()
+        };
+        let transform = Transform::from_translation(pos.extend(0.0));
+        Self {
+            name: Name::new("BasicShooter"),
+            shooter: BasicShooter {},
+            velocity: Velocity::default(),
+            shape: ShapeBundle {
+                path: GeometryBuilder::build_as(&shape),
+                spatial: SpatialBundle::from_transform(transform),
+                ..default()
+            },
+            fill: Fill::color(Color::ORANGE * 4.0),
+        }
+    }
+}
+
+// TODO: Set up a simple boids simulation for the main cluster of ships.
+
+pub fn spawn_swarm(commands: &mut Commands) {
     commands.spawn((
         Name::new("SwarmParent"),
-        SwarmParent,
+        SwarmParent::new(),
         PlayerInput::default(),
         SpatialBundle::default(),
     )).with_children(|b| {
-        b.spawn((
-            Name::new("BasicShooter"),
-            BasicShooter {},
-            ShapeBundle {
-                path: GeometryBuilder::build_as(&shape),
-                ..default()
-            },
-            Fill::color(Color::ORANGE * 5.0),
-        ));
+        b.spawn(BasicShooterBundle::new(Vec2::new(50.0, -50.0)));
+        b.spawn(BasicShooterBundle::new(Vec2::new(-50.0, -50.0)));
+        b.spawn(BasicShooterBundle::new(Vec2::new(0.0, 50.0)));
     });
+}
+
+fn shooter_flock_movement(
+    parent_q: Query<(&Children, &Transform, &SwarmParent)>,
+    mut flock_q: Query<(&mut Transform, &mut Velocity), (With<BasicShooter>, Without<SwarmParent>)>,
+) {
+    // TODO: Get list of children in parent. Do iter_many over those Entities.
+    let Ok((children, transform, swarm)) = parent_q.get_single() else {
+        return;
+    };
+    let swarm_pos = transform.translation.truncate();
+
+    // for (transform, velocity) in flock_q.iter() {
+    for child in children {
+        let Ok((&transform, &velocity)) = flock_q.get(*child) else {
+            continue;
+        };
+        let pos = transform.translation.truncate();
+
+        let sepration = {
+            // Try to steer away from nearby boids.
+            let mut steer = Vec2::ZERO;
+            let mut count = 0;
+
+            // Check if we're too close to all other boids.
+            for (other_transform, _) in flock_q.iter() {
+                let other_pos = other_transform.translation.truncate();
+                let dist = pos.distance(other_pos);
+
+                // If we're too close, modify our steering vector.
+                if dist > 0.0 && dist < swarm.separation_dist {
+                    let diff = (pos - other_pos).normalize() / dist;
+                    steer += diff;
+                    count += 1;
+                }
+            }
+
+            // Average out the steering.
+            if count > 0 {
+                steer /= count as f32;
+            }
+
+            if steer != Vec2::ZERO {
+                steer = steer.clamp_length(swarm.max_speed, swarm.max_speed);
+                steer -= velocity.inner;
+                steer = steer.clamp_length_max(swarm.max_force);
+            }
+
+            steer
+        };
+        let alignment = {
+            // Try to align with nearby boids.
+            // let neighbor_dist = 50.0;
+
+            // let mut sum = Vec2::ZERO;
+            // let mut count = 0;
+
+            // for other in &model.boids {
+            //     let dist = boid.pos.distance(other.pos);
+            //     if dist > 0.0 && dist < neighbor_dist {
+            //         sum += other.vel;
+            //         count += 1;
+            //     }
+            // }
+
+            // if count > 0 {
+            //     let avg_vel = sum / count as f32;
+            //     let desired_vel = avg_vel.clamp_length(MAX_SPEED, MAX_SPEED);
+            //     (desired_vel - velocity.inner).clamp_length_max(MAX_FORCE)
+            // } else {
+            //     Vec2::ZERO
+            // }
+            // swarm_pos.distance(pos)
+            let desired = (swarm_pos - pos).normalize_or_zero() * 200.0;
+            (desired - velocity.inner).clamp_length_max(swarm.max_force)
+        };
+        let cohesion = {
+            // Try to move to the center of nearby boids.
+            let mut sum = Vec2::ZERO;
+            let mut count = 0;
+
+            for (other_transform, _) in flock_q.iter() {
+                let other_pos = other_transform.translation.truncate();
+                let dist = pos.distance(other_pos);
+                if dist > 0.0 && dist < swarm.cohesion_dist {
+                    sum += other_pos;
+                    count += 1;
+                }
+            }
+
+            if count > 0 {
+                let avg_pos = sum / count as f32;
+                let desired = (avg_pos - pos).clamp_length(swarm.max_speed, swarm.max_speed);
+                (desired - velocity.inner).clamp_length_max(swarm.max_force)
+            } else {
+                Vec2::ZERO
+            }
+        };
+
+        // Update our physics.
+        if let Ok((mut transform, mut velocity)) = flock_q.get_mut(*child) {
+            let accel = sepration * swarm.separation + alignment * swarm.alignment + cohesion * swarm.cohesion;
+            velocity.inner += accel;
+            velocity.inner = velocity.inner.clamp_length_max(swarm.max_speed);
+            transform.translation += velocity.inner.extend(0.0);
+        };
+    }
 }

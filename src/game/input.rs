@@ -290,7 +290,7 @@ fn update_movement(
     time: Res<Time>,
     mut q: Query<(&PlayerInput, &mut Transform)>,
 ) {
-    const SPEED: f32 = 100.0;
+    const SPEED: f32 = 300.0;
     for (input, mut transform) in q.iter_mut() {
         transform.translation += input.movement.extend(0.0) * time.delta_seconds() * SPEED;
     }
