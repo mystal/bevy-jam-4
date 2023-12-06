@@ -24,6 +24,12 @@ fn start_game(
                 hdr: true,
                 ..default()
             },
+            projection: OrthographicProjection {
+                far: 1000.,
+                near: -1000.,
+                scale: 2.0,
+                ..default()
+            },
             ..default()
         },
         BloomSettings::default(),

@@ -30,13 +30,13 @@ pub struct SwarmParent {
 impl SwarmParent {
     pub fn new() -> Self {
         Self {
-            separation: 1.0,
+            separation: 1.2,
             alignment: 1.0,
             cohesion: 1.0,
-            separation_dist: 80.0,
-            cohesion_dist: 80.0,
-            max_speed: 300.0,
-            max_force: 4.5,
+            separation_dist: 50.0,
+            cohesion_dist: 30.0,
+            max_speed: 200.0,
+            max_force: 1.0,
         }
     }
 }
@@ -85,9 +85,16 @@ pub fn spawn_swarm(commands: &mut Commands) {
         PlayerInput::default(),
         SpatialBundle::default(),
     )).with_children(|b| {
-        b.spawn(BasicShooterBundle::new(Vec2::new(50.0, -50.0)));
-        b.spawn(BasicShooterBundle::new(Vec2::new(-50.0, -50.0)));
-        b.spawn(BasicShooterBundle::new(Vec2::new(0.0, 50.0)));
+        for _ in 0..100 {
+            let radius = 150.0;
+            let x = (fastrand::f32() * 2.0) - 1.0;
+            let y = (fastrand::f32() * 2.0) - 1.0;
+            let pos = Vec2::new(x, y) * radius;
+            b.spawn(BasicShooterBundle::new(pos));
+        }
+        // b.spawn(BasicShooterBundle::new(Vec2::new(50.0, -50.0)));
+        // b.spawn(BasicShooterBundle::new(Vec2::new(-50.0, -50.0)));
+        // b.spawn(BasicShooterBundle::new(Vec2::new(0.0, 50.0)));
     });
 }
 
@@ -162,7 +169,7 @@ fn shooter_flock_movement(
             //     Vec2::ZERO
             // }
             // swarm_pos.distance(pos)
-            let desired = (swarm_pos - pos).normalize_or_zero() * 200.0;
+            let desired = (swarm_pos - pos).normalize_or_zero() * swarm.max_speed;
             (desired - velocity.inner).clamp_length_max(swarm.max_force)
         };
         let cohesion = {
