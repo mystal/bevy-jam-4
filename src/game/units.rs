@@ -3,7 +3,7 @@ use bevy_prototype_lyon::prelude::*;
 
 use crate::{
     game::input::PlayerInput,
-    physics::Velocity,
+    physics::{PlayerMovement, Velocity},
 };
 
 pub struct UnitsPlugin;
@@ -82,6 +82,7 @@ pub fn spawn_swarm(commands: &mut Commands) {
     commands.spawn((
         Name::new("SwarmParent"),
         SwarmParent::new(),
+        PlayerMovement::default(),
         PlayerInput::default(),
         SpatialBundle::default(),
     )).with_children(|b| {
@@ -92,9 +93,6 @@ pub fn spawn_swarm(commands: &mut Commands) {
             let pos = Vec2::new(x, y) * radius;
             b.spawn(BasicShooterBundle::new(pos));
         }
-        // b.spawn(BasicShooterBundle::new(Vec2::new(50.0, -50.0)));
-        // b.spawn(BasicShooterBundle::new(Vec2::new(-50.0, -50.0)));
-        // b.spawn(BasicShooterBundle::new(Vec2::new(0.0, 50.0)));
     });
 }
 
@@ -106,7 +104,8 @@ fn shooter_flock_movement(
     let Ok((children, transform, swarm)) = parent_q.get_single() else {
         return;
     };
-    let swarm_pos = transform.translation.truncate();
+    // let swarm_pos = transform.translation.truncate();
+    let swarm_pos = Vec2::ZERO;
 
     // for (transform, velocity) in flock_q.iter() {
     for child in children {
@@ -147,29 +146,7 @@ fn shooter_flock_movement(
             steer
         };
         let alignment = {
-            // Try to align with nearby boids.
-            // let neighbor_dist = 50.0;
-
-            // let mut sum = Vec2::ZERO;
-            // let mut count = 0;
-
-            // for other in &model.boids {
-            //     let dist = boid.pos.distance(other.pos);
-            //     if dist > 0.0 && dist < neighbor_dist {
-            //         sum += other.vel;
-            //         count += 1;
-            //     }
-            // }
-
-            // if count > 0 {
-            //     let avg_vel = sum / count as f32;
-            //     let desired_vel = avg_vel.clamp_length(MAX_SPEED, MAX_SPEED);
-            //     (desired_vel - velocity.inner).clamp_length_max(MAX_FORCE)
-            // } else {
-            //     Vec2::ZERO
-            // }
-            // swarm_pos.distance(pos)
-            let desired = (swarm_pos - pos).normalize_or_zero() * swarm.max_speed;
+            let desired = (swarm_pos - pos).clamp_length(swarm.max_speed, swarm.max_speed);
             (desired - velocity.inner).clamp_length_max(swarm.max_force)
         };
         let cohesion = {

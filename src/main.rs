@@ -96,6 +96,7 @@ fn main() {
             // assets::AssetsPlugin,
             debug::DebugPlugin,
             game::GamePlugin,
+            physics::PhysicsPlugin,
         ));
 
     if ALLOW_EXIT {

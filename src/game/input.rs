@@ -17,9 +17,8 @@ impl Plugin for InputPlugin {
     fn build(&self, app: &mut App) {
         app
             .register_type::<PlayerInput>()
-            .add_systems(Update, (
+            .add_systems(PreUpdate, (
                 read_player_input,
-                update_movement.after(read_player_input),
             ));
             // .add_systems(Update, (
             //     read_player_input,
@@ -284,16 +283,6 @@ pub fn read_player_input(
     input.aim_device = aim_device;
     input.shoot = shoot;
     input.reset_game = reset_game;
-}
-
-fn update_movement(
-    time: Res<Time>,
-    mut q: Query<(&PlayerInput, &mut Transform)>,
-) {
-    const SPEED: f32 = 300.0;
-    for (input, mut transform) in q.iter_mut() {
-        transform.translation += input.movement.extend(0.0) * time.delta_seconds() * SPEED;
-    }
 }
 
 // fn update_player_movement(
