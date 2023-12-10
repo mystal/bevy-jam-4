@@ -5,6 +5,7 @@ use crate::{
         enemies::Enemy,
         factions::Faction,
         health::Health,
+        projectiles::Projectile,
     },
     physics::{self, groups, ActiveCollisionTypes, ActiveEvents, CollisionEvent, Group},
 };
@@ -100,6 +101,7 @@ pub fn check_hits(
     parent_q: Query<&Parent>,
     // rigid_body_q: Query<&RigidBody>,
     hit_box_q: Query<(&HitSpec, &Faction)>,
+    projectile_q: Query<&Projectile>,
     // hurt_box_q: Query<(), With<HurtBox>>,
     // player_q: Query<(Entity, &PlayerHealth), With<Player>>,
     mut health_q: Query<(&mut Health, &Faction)>,
@@ -126,6 +128,9 @@ pub fn check_hits(
                     commands.entity(e2).despawn();
                     debug!("Entity {} died!", name);
                 }
+                if projectile_q.contains(e1) {
+                    commands.entity(e1).despawn();
+                }
             } else if let (Ok((hit_spec, faction2)), Ok((mut health, faction1))) = (hit_box_q.get(e2), health_q.get_mut(e1)) {
                 if faction1 == faction2 {
                     continue;
@@ -139,6 +144,9 @@ pub fn check_hits(
                 if health.current() == 0.0 {
                     commands.entity(e1).despawn();
                     debug!("Entity {} died!", name);
+                }
+                if projectile_q.contains(e2) {
+                    commands.entity(e2).despawn();
                 }
             }
         }

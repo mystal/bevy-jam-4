@@ -9,7 +9,7 @@ use crate::{
     // assets::AudioAssets,
     // enemies::spawner::Spawner,
     // game::{Bgm, GameTimers},
-    game::{enemies, input},
+    game::{ai, enemies, input},
     // player::{self, PlayerInput},
     // weapons::{Weapon, WeaponChoice},
 };
@@ -136,6 +136,9 @@ fn build_enemy(
     }
 
     if let Some(pos) = input::get_mouse_world_pos(&primary_window_q, &camera_q) {
-        commands.spawn(enemies::EnemyBundle::new(pos));
+        commands.spawn((
+            enemies::EnemyBundle::new(pos),
+            ai::SimpleShooterAi::new(3.0, 0.0..=2.0),
+        ));
     }
 }

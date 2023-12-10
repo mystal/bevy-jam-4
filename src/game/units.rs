@@ -111,7 +111,7 @@ pub fn spawn_swarm(commands: &mut Commands) {
         SpatialBundle::default(),
         Faction::Player,
     )).with_children(|b| {
-        for _ in 0..10 {
+        for _ in 0..100 {
             let radius = 150.0;
             let x = (fastrand::f32() * 2.0) - 1.0;
             let y = (fastrand::f32() * 2.0) - 1.0;

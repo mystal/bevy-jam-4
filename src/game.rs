@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::core_pipeline::bloom::BloomSettings;
 
+pub mod ai;
 pub mod combat;
 pub mod enemies;
 pub mod factions;
@@ -15,6 +16,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugins((
+                ai::AiPlugin,
                 combat::CombatPlugin,
                 enemies::EnemiesPlugin,
                 health::HealthPlugin,
