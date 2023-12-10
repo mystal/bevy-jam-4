@@ -1,6 +1,12 @@
 use bevy::prelude::*;
 
-use crate::physics::{self, groups, ActiveCollisionTypes, ActiveEvents, CollisionEvent, Group};
+use crate::{
+    game::{
+        enemies::Enemy,
+        health::Health,
+    },
+    physics::{self, groups, ActiveCollisionTypes, ActiveEvents, CollisionEvent, Group},
+};
 
 pub struct CombatPlugin;
 
@@ -86,6 +92,7 @@ impl HurtBoxBundle {
 }
 
 pub fn check_hits(
+    mut commands: Commands,
     mut collisions: EventReader<CollisionEvent>,
     // mut hits: EventWriter<HitEvent>,
     // mut player_hits: EventWriter<PlayerHitEvent>,
@@ -94,7 +101,7 @@ pub fn check_hits(
     hit_box_q: Query<&HitSpec>,
     // hurt_box_q: Query<(), With<HurtBox>>,
     // player_q: Query<(Entity, &PlayerHealth), With<Player>>,
-    // enemy_q: Query<(), With<Enemy>>,
+    mut enemy_q: Query<&mut Health, With<Enemy>>,
     name_q: Query<&Name>,
     // groups_q: Query<&CollisionGroups>,
 ) {
@@ -102,6 +109,29 @@ pub fn check_hits(
 
     // Listen for collision events involving a hit box and a hurt box and send a hit event.
     for collision in collisions.read() {
-        info!("Collision event: {:?}", collision);
+        // info!("Collision event: {:?}", collision);
+        if let &CollisionEvent::Started(e1, e2, _flags) = collision {
+            if let (Ok(hit_spec), Ok(mut health)) = (hit_box_q.get(e1), enemy_q.get_mut(e2)) {
+                let lost = health.lose_health(hit_spec.damage);
+                let name = name_q.get(e2)
+                    .map(|name| name.as_str())
+                    .unwrap_or("[unnamed]");
+                debug!("Entity {} lost {} health", name, lost);
+                if health.current() == 0.0 {
+                    commands.entity(e2).despawn();
+                    debug!("Entity {} died!", name);
+                }
+            } else if let (Ok(hit_spec), Ok(mut health)) = (hit_box_q.get(e2), enemy_q.get_mut(e1)) {
+                let lost = health.lose_health(hit_spec.damage);
+                let name = name_q.get(e1)
+                    .map(|name| name.as_str())
+                    .unwrap_or("[unnamed]");
+                debug!("Entity {} lost {} health", name, lost);
+                if health.current() == 0.0 {
+                    commands.entity(e1).despawn();
+                    debug!("Entity {} died!", name);
+                }
+            }
+        }
     }
 }

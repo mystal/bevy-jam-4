@@ -3,6 +3,7 @@ use bevy::core_pipeline::bloom::BloomSettings;
 
 pub mod combat;
 pub mod enemies;
+pub mod health;
 pub mod input;
 pub mod projectiles;
 pub mod units;
@@ -15,6 +16,7 @@ impl Plugin for GamePlugin {
             .add_plugins((
                 combat::CombatPlugin,
                 enemies::EnemiesPlugin,
+                health::HealthPlugin,
                 input::InputPlugin,
                 projectiles::ProjectilesPlugin,
                 units::UnitsPlugin,

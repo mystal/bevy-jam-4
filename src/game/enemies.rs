@@ -2,7 +2,10 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 use crate::{
-    game::combat::HurtBoxBundle,
+    game::{
+        combat::HurtBoxBundle,
+        health::Health,
+    },
     physics::groups,
 };
 
@@ -21,6 +24,7 @@ pub struct Enemy {
 pub struct EnemyBundle {
     name: Name,
     enemy: Enemy,
+    health: Health,
     hurt_box: HurtBoxBundle,
     shape: ShapeBundle,
     fill: Fill,
@@ -39,6 +43,7 @@ impl EnemyBundle {
             name: Name::new("Enemy"),
             enemy: Enemy {
             },
+            health: Health::new(1.0),
             hurt_box: HurtBoxBundle::rect(size, groups::ENEMY),
             shape: ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
