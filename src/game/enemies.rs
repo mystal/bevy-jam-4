@@ -53,7 +53,7 @@ impl EnemyBundle {
                 spatial: SpatialBundle::from_transform(transform),
                 ..default()
             },
-            fill: Fill::color(Color::ORANGE * 4.0),
+            fill: Fill::color(Color::SILVER * 4.0),
         }
     }
 }
