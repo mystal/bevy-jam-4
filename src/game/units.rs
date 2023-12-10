@@ -211,7 +211,7 @@ fn shooter_fire(
             if shooter.last_fired <= 0.0 || (now - shooter.last_fired) >= shooter.cooldown {
                 let pos = transform.translation().truncate() + Vec2::Y * 20.0;
                 let vel = Vec2::Y * 1000.0;
-                commands.spawn(ProjectileBundle::new(pos, vel));
+                commands.spawn(ProjectileBundle::new(pos, vel, 1.0));
 
                 shooter.last_fired = now;
             }

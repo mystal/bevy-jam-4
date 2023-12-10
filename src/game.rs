@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::core_pipeline::bloom::BloomSettings;
 
+pub mod combat;
 pub mod enemies;
 pub mod input;
 pub mod projectiles;
@@ -12,6 +13,7 @@ impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
             .add_plugins((
+                combat::CombatPlugin,
                 enemies::EnemiesPlugin,
                 input::InputPlugin,
                 projectiles::ProjectilesPlugin,

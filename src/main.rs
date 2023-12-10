@@ -84,7 +84,7 @@ fn main() {
             gravity: Vec2::ZERO,
             ..default()
         })
-        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(1.0))
+        .add_plugins(RapierPhysicsPlugin::<NoUserData>::pixels_per_meter(30.0))
         .add_plugins(AudioPlugin)
         .add_plugins(ShapePlugin)
 

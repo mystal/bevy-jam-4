@@ -2,7 +2,8 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 use crate::{
-    physics::Velocity,
+    game::combat::HitBoxBundle,
+    physics::{groups, Velocity},
 };
 
 pub struct ProjectilesPlugin;
@@ -25,14 +26,16 @@ pub struct ProjectileBundle {
     name: Name,
     projectile: Projectile,
     velocity: Velocity,
+    hit_box: HitBoxBundle,
     shape: ShapeBundle,
     fill: Fill,
 }
 
 impl ProjectileBundle {
-    pub fn new(pos: Vec2, vel: Vec2) -> Self {
+    pub fn new(pos: Vec2, vel: Vec2, damage: f32) -> Self {
+        let radius = 8.0;
         let shape = shapes::Circle {
-            radius: 8.0,
+            radius,
             ..default()
         };
         let transform = Transform::from_translation(pos.extend(0.0));
@@ -42,6 +45,7 @@ impl ProjectileBundle {
                 lifetime: Timer::from_seconds(5.0, TimerMode::Once)
             },
             velocity: Velocity::new(vel),
+            hit_box: HitBoxBundle::circle(radius, damage, groups::NONE),
             shape: ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
                 spatial: SpatialBundle::from_transform(transform),

@@ -1,6 +1,11 @@
 use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
+use crate::{
+    game::combat::HurtBoxBundle,
+    physics::groups,
+};
+
 pub struct EnemiesPlugin;
 
 impl Plugin for EnemiesPlugin {
@@ -16,6 +21,7 @@ pub struct Enemy {
 pub struct EnemyBundle {
     name: Name,
     enemy: Enemy,
+    hurt_box: HurtBoxBundle,
     shape: ShapeBundle,
     fill: Fill,
 }
@@ -27,11 +33,13 @@ impl EnemyBundle {
             feature: RegularPolygonFeature::Radius(20.0),
             ..default()
         };
+        let size = Vec2::splat(40.0);
         let transform = Transform::from_translation(pos.extend(0.0));
         Self {
-            name: Name::new("BasicShooter"),
+            name: Name::new("Enemy"),
             enemy: Enemy {
             },
+            hurt_box: HurtBoxBundle::rect(size, groups::ENEMY),
             shape: ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
                 spatial: SpatialBundle::from_transform(transform),
