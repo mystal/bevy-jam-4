@@ -11,9 +11,12 @@ pub struct GamePlugin;
 impl Plugin for GamePlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_plugins(input::InputPlugin)
-            .add_plugins(projectiles::ProjectilesPlugin)
-            .add_plugins(units::UnitsPlugin)
+            .add_plugins((
+                enemies::EnemiesPlugin,
+                input::InputPlugin,
+                projectiles::ProjectilesPlugin,
+                units::UnitsPlugin,
+            ))
             .add_systems(Startup, start_game);
     }
 }

@@ -176,7 +176,7 @@ pub struct PlayerInput {
 
 // Taken from:
 // https://bevy-cheatbook.github.io/cookbook/cursor2world.html#2d-games
-fn get_mouse_world_pos(
+pub fn get_mouse_world_pos(
     window_q: &Query<&Window, With<PrimaryWindow>>,
     camera_q: &Query<(&Camera, &GlobalTransform)>,
 ) -> Option<Vec2> {

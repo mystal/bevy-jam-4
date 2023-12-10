@@ -9,7 +9,7 @@ use crate::{
     // assets::AudioAssets,
     // enemies::spawner::Spawner,
     // game::{Bgm, GameTimers},
-    game::input,
+    game::{enemies, input},
     // player::{self, PlayerInput},
     // weapons::{Weapon, WeaponChoice},
 };
@@ -31,6 +31,7 @@ impl Plugin for DebugPlugin {
                 debug_ui.run_if(debug_ui_enabled),
                 toggle_debug_ui,
                 toggle_physics_debug_render,
+                build_enemy.run_if(build_mode_enabled),
             ).before(input::read_player_input))
             .add_systems(Last, update_mouse_cursor);
     }
@@ -40,6 +41,7 @@ impl Plugin for DebugPlugin {
 struct DebugState {
     enabled: bool,
     show_world_inspector: bool,
+    build_mode: bool,
 }
 
 fn debug_ui_enabled(
@@ -52,6 +54,12 @@ fn show_world_inspector(
     debug_ui: Res<DebugState>,
 ) -> bool {
     debug_ui.enabled && debug_ui.show_world_inspector
+}
+
+fn build_mode_enabled(
+    debug_ui: Res<DebugState>,
+) -> bool {
+    debug_ui.enabled && debug_ui.build_mode
 }
 
 fn debug_ui(
@@ -70,6 +78,7 @@ fn debug_ui(
                 ui.menu_button("Debug", |ui| {
                     ui.checkbox(&mut debug_state.show_world_inspector, "World Inspector");
                     ui.checkbox(&mut debug_physics_ctx.enabled, "Debug Physics Render");
+                    ui.checkbox(&mut debug_state.build_mode, "Build Mode");
                 });
             });
         });
@@ -112,5 +121,21 @@ fn toggle_physics_debug_render(
 
     if keys.just_pressed(KeyCode::Key0) {
         debug_render_context.enabled = !debug_render_context.enabled;
+    }
+}
+
+fn build_enemy(
+    mut commands: Commands,
+    mouse_buttons: Res<Input<MouseButton>>,
+    mut egui_ctx: EguiContexts,
+    camera_q: Query<(&Camera, &GlobalTransform)>,
+    primary_window_q: Query<&Window, With<PrimaryWindow>>,
+) {
+    if egui_ctx.ctx_mut().wants_pointer_input() || !mouse_buttons.just_pressed(MouseButton::Left) {
+        return;
+    }
+
+    if let Some(pos) = input::get_mouse_world_pos(&primary_window_q, &camera_q) {
+        commands.spawn(enemies::EnemyBundle::new(pos));
     }
 }
