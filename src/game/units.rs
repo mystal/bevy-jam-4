@@ -31,6 +31,8 @@ pub struct SwarmParent {
     pub cohesion_dist: f32,
     pub max_speed: f32,
     pub max_force: f32,
+    pub shooter_cooldown: f32,
+    pub last_fired_time: f32,
 }
 
 impl SwarmParent {
@@ -43,6 +45,8 @@ impl SwarmParent {
             cohesion_dist: 30.0,
             max_speed: 200.0,
             max_force: 1.0,
+            shooter_cooldown: 2.0,
+            last_fired_time: -1.0,
         }
     }
 }
@@ -195,26 +199,30 @@ fn shooter_flock_movement(
 fn shooter_fire(
     mut commands: Commands,
     time: Res<Time>,
-    parent_q: Query<(&Children, &PlayerInput), With<SwarmParent>>,
-    mut shooter_q: Query<(&GlobalTransform, &mut BasicShooter)>,
+    mut parent_q: Query<(&Children, &PlayerInput, &mut SwarmParent)>,
+    shooter_q: Query<(&GlobalTransform, &BasicShooter)>,
 ) {
-    for (children, input) in parent_q.iter() {
-        if !input.shoot {
+    for (children, input, mut parent) in parent_q.iter_mut() {
+        if !input.shoot || children.is_empty() {
             continue;
         }
 
         let now = time.elapsed_seconds();
-        for &entity in children {
-            let Ok((transform, mut shooter)) = shooter_q.get_mut(entity) else {
-                continue;
-            };
-            if shooter.last_fired <= 0.0 || (now - shooter.last_fired) >= shooter.cooldown {
-                let pos = transform.translation().truncate() + Vec2::Y * 20.0;
-                let vel = Vec2::Y * 1000.0;
-                commands.spawn(ProjectileBundle::new(pos, vel, 1.0));
-
-                shooter.last_fired = now;
-            }
+        let cooldown = parent.shooter_cooldown / children.len() as f32;
+        if parent.last_fired_time > 0.0 && (now - parent.last_fired_time) < cooldown {
+            continue;
         }
+
+        // Pick a child at random to shoot from.
+        // TODO: Make sure we pick a child that's a shooter.
+        let entity = *fastrand::choice(children.iter()).unwrap();
+        let Ok((transform, _shooter)) = shooter_q.get(entity) else {
+            continue;
+        };
+        let pos = transform.translation().truncate() + Vec2::Y * 20.0;
+        let vel = Vec2::Y * 1000.0;
+        commands.spawn(ProjectileBundle::new(pos, vel, 1.0));
+
+        parent.last_fired_time = now;
     }
 }
