@@ -273,7 +273,7 @@ pub fn read_player_input(
     }
 
     // Shoot
-    shoot |= mouse_buttons.pressed(MouseButton::Left) && !egui_ctx.ctx_mut().wants_pointer_input();
+    shoot |= keys.pressed(KeyCode::Space) && !egui_ctx.ctx_mut().wants_keyboard_input();
 
     reset_game |= keys.just_pressed(KeyCode::Space) && !egui_ctx.ctx_mut().wants_keyboard_input();
 

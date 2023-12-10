@@ -8,13 +8,20 @@ impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app
             .add_systems(Update, update_movement);
-
     }
 }
 
 #[derive(Clone, Copy, Default, Component)]
 pub struct Velocity {
     pub inner: Vec2,
+}
+
+impl Velocity {
+    pub fn new(vel: Vec2) -> Self {
+        Self {
+            inner: vel,
+        }
+    }
 }
 
 #[derive(Component)]
@@ -25,7 +32,7 @@ pub struct PlayerMovement {
 impl Default for PlayerMovement {
     fn default() -> Self {
         Self {
-            speed: 400.0,
+            speed: 600.0,
         }
     }
 }

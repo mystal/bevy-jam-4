@@ -2,7 +2,10 @@ use bevy::prelude::*;
 use bevy_prototype_lyon::prelude::*;
 
 use crate::{
-    game::input::PlayerInput,
+    game::{
+        input::PlayerInput,
+        projectiles::ProjectileBundle,
+    },
     physics::{PlayerMovement, Velocity},
 };
 
@@ -12,7 +15,10 @@ impl Plugin for UnitsPlugin {
     fn build(&self, app: &mut App) {
         app
             .register_type::<SwarmParent>()
-            .add_systems(Update, shooter_flock_movement);
+            .add_systems(Update, (
+                shooter_flock_movement,
+                shooter_fire,
+            ).chain());
     }
 }
 
@@ -43,6 +49,8 @@ impl SwarmParent {
 
 #[derive(Component)]
 pub struct BasicShooter {
+    last_fired: f32,
+    cooldown: f32,
 }
 
 #[derive(Bundle)]
@@ -64,7 +72,10 @@ impl BasicShooterBundle {
         let transform = Transform::from_translation(pos.extend(0.0));
         Self {
             name: Name::new("BasicShooter"),
-            shooter: BasicShooter {},
+            shooter: BasicShooter {
+                last_fired: -1.0,
+                cooldown: 1.0,
+            },
             velocity: Velocity::default(),
             shape: ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
@@ -86,7 +97,7 @@ pub fn spawn_swarm(commands: &mut Commands) {
         PlayerInput::default(),
         SpatialBundle::default(),
     )).with_children(|b| {
-        for _ in 0..100 {
+        for _ in 0..10 {
             let radius = 150.0;
             let x = (fastrand::f32() * 2.0) - 1.0;
             let y = (fastrand::f32() * 2.0) - 1.0;
@@ -107,7 +118,6 @@ fn shooter_flock_movement(
     // let swarm_pos = transform.translation.truncate();
     let swarm_pos = Vec2::ZERO;
 
-    // for (transform, velocity) in flock_q.iter() {
     for child in children {
         let Ok((&transform, &velocity)) = flock_q.get(*child) else {
             continue;
@@ -179,5 +189,32 @@ fn shooter_flock_movement(
             velocity.inner = velocity.inner.clamp_length_max(swarm.max_speed);
             transform.translation += velocity.inner.extend(0.0);
         };
+    }
+}
+
+fn shooter_fire(
+    mut commands: Commands,
+    time: Res<Time>,
+    parent_q: Query<(&Children, &PlayerInput), With<SwarmParent>>,
+    mut shooter_q: Query<(&GlobalTransform, &mut BasicShooter)>,
+) {
+    for (children, input) in parent_q.iter() {
+        if !input.shoot {
+            continue;
+        }
+
+        let now = time.elapsed_seconds();
+        for &entity in children {
+            let Ok((transform, mut shooter)) = shooter_q.get_mut(entity) else {
+                continue;
+            };
+            if shooter.last_fired <= 0.0 || (now - shooter.last_fired) >= shooter.cooldown {
+                let pos = transform.translation().truncate() + Vec2::Y * 20.0;
+                let vel = Vec2::Y * 1000.0;
+                commands.spawn(ProjectileBundle::new(pos, vel));
+
+                shooter.last_fired = now;
+            }
+        }
     }
 }
