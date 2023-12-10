@@ -4,6 +4,7 @@ use bevy_prototype_lyon::prelude::*;
 use crate::{
     game::{
         combat::HurtBoxBundle,
+        factions::Faction,
         health::Health,
     },
     physics::groups,
@@ -24,6 +25,7 @@ pub struct Enemy {
 pub struct EnemyBundle {
     name: Name,
     enemy: Enemy,
+    faction: Faction,
     health: Health,
     hurt_box: HurtBoxBundle,
     shape: ShapeBundle,
@@ -43,6 +45,7 @@ impl EnemyBundle {
             name: Name::new("Enemy"),
             enemy: Enemy {
             },
+            faction: Faction::Enemy,
             health: Health::new(1.0),
             hurt_box: HurtBoxBundle::rect(size, groups::ENEMY),
             shape: ShapeBundle {

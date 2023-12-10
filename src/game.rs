@@ -3,6 +3,7 @@ use bevy::core_pipeline::bloom::BloomSettings;
 
 pub mod combat;
 pub mod enemies;
+pub mod factions;
 pub mod health;
 pub mod input;
 pub mod projectiles;

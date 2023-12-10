@@ -3,10 +3,13 @@ use bevy_prototype_lyon::prelude::*;
 
 use crate::{
     game::{
+        combat::HurtBoxBundle,
+        factions::Faction,
+        health::Health,
         input::PlayerInput,
         projectiles::ProjectileBundle,
     },
-    physics::{PlayerMovement, Velocity},
+    physics::{groups, PlayerMovement, Velocity},
 };
 
 pub struct UnitsPlugin;
@@ -61,7 +64,10 @@ pub struct BasicShooter {
 pub struct BasicShooterBundle {
     name: Name,
     shooter: BasicShooter,
+    faction: Faction,
     velocity: Velocity,
+    health: Health,
+    hurt_box: HurtBoxBundle,
     shape: ShapeBundle,
     fill: Fill,
 }
@@ -80,7 +86,10 @@ impl BasicShooterBundle {
                 last_fired: -1.0,
                 cooldown: 1.0,
             },
+            faction: Faction::Player,
             velocity: Velocity::default(),
+            health: Health::new(1.0),
+            hurt_box: HurtBoxBundle::circle(16.0, groups::PLAYER),
             shape: ShapeBundle {
                 path: GeometryBuilder::build_as(&shape),
                 spatial: SpatialBundle::from_transform(transform),
@@ -100,6 +109,7 @@ pub fn spawn_swarm(commands: &mut Commands) {
         PlayerMovement::default(),
         PlayerInput::default(),
         SpatialBundle::default(),
+        Faction::Player,
     )).with_children(|b| {
         for _ in 0..10 {
             let radius = 150.0;
@@ -199,10 +209,10 @@ fn shooter_flock_movement(
 fn shooter_fire(
     mut commands: Commands,
     time: Res<Time>,
-    mut parent_q: Query<(&Children, &PlayerInput, &mut SwarmParent)>,
+    mut parent_q: Query<(&Children, &PlayerInput, &mut SwarmParent, &Faction)>,
     shooter_q: Query<(&GlobalTransform, &BasicShooter)>,
 ) {
-    for (children, input, mut parent) in parent_q.iter_mut() {
+    for (children, input, mut parent, faction) in parent_q.iter_mut() {
         if !input.shoot || children.is_empty() {
             continue;
         }
@@ -221,7 +231,7 @@ fn shooter_fire(
         };
         let pos = transform.translation().truncate() + Vec2::Y * 20.0;
         let vel = Vec2::Y * 1000.0;
-        commands.spawn(ProjectileBundle::new(pos, vel, 1.0));
+        commands.spawn(ProjectileBundle::new(pos, vel, 1.0, *faction));
 
         parent.last_fired_time = now;
     }

@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::{
     game::{
         enemies::Enemy,
+        factions::Faction,
         health::Health,
     },
     physics::{self, groups, ActiveCollisionTypes, ActiveEvents, CollisionEvent, Group},
@@ -98,10 +99,10 @@ pub fn check_hits(
     // mut player_hits: EventWriter<PlayerHitEvent>,
     parent_q: Query<&Parent>,
     // rigid_body_q: Query<&RigidBody>,
-    hit_box_q: Query<&HitSpec>,
+    hit_box_q: Query<(&HitSpec, &Faction)>,
     // hurt_box_q: Query<(), With<HurtBox>>,
     // player_q: Query<(Entity, &PlayerHealth), With<Player>>,
-    mut enemy_q: Query<&mut Health, With<Enemy>>,
+    mut health_q: Query<(&mut Health, &Faction)>,
     name_q: Query<&Name>,
     // groups_q: Query<&CollisionGroups>,
 ) {
@@ -111,7 +112,11 @@ pub fn check_hits(
     for collision in collisions.read() {
         // info!("Collision event: {:?}", collision);
         if let &CollisionEvent::Started(e1, e2, _flags) = collision {
-            if let (Ok(hit_spec), Ok(mut health)) = (hit_box_q.get(e1), enemy_q.get_mut(e2)) {
+            if let (Ok((hit_spec, faction1)), Ok((mut health, faction2))) = (hit_box_q.get(e1), health_q.get_mut(e2)) {
+                if faction1 == faction2 {
+                    continue;
+                }
+
                 let lost = health.lose_health(hit_spec.damage);
                 let name = name_q.get(e2)
                     .map(|name| name.as_str())
@@ -121,7 +126,11 @@ pub fn check_hits(
                     commands.entity(e2).despawn();
                     debug!("Entity {} died!", name);
                 }
-            } else if let (Ok(hit_spec), Ok(mut health)) = (hit_box_q.get(e2), enemy_q.get_mut(e1)) {
+            } else if let (Ok((hit_spec, faction2)), Ok((mut health, faction1))) = (hit_box_q.get(e2), health_q.get_mut(e1)) {
+                if faction1 == faction2 {
+                    continue;
+                }
+
                 let lost = health.lose_health(hit_spec.damage);
                 let name = name_q.get(e1)
                     .map(|name| name.as_str())
