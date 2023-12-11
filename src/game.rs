@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use bevy::core_pipeline::bloom::BloomSettings;
 
 pub mod ai;
+pub mod camera;
 pub mod combat;
 pub mod enemies;
 pub mod factions;
@@ -17,6 +18,7 @@ impl Plugin for GamePlugin {
         app
             .add_plugins((
                 ai::AiPlugin,
+                camera::CameraPlugin,
                 combat::CombatPlugin,
                 enemies::EnemiesPlugin,
                 health::HealthPlugin,
