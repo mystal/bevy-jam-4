@@ -10,6 +10,7 @@ pub mod health;
 pub mod input;
 pub mod projectiles;
 pub mod units;
+pub mod waves;
 
 pub struct GamePlugin;
 
@@ -25,6 +26,7 @@ impl Plugin for GamePlugin {
                 input::InputPlugin,
                 projectiles::ProjectilesPlugin,
                 units::UnitsPlugin,
+                waves::WavesPlugin,
             ))
             .add_systems(Startup, start_game);
     }
