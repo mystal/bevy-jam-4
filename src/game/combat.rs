@@ -125,11 +125,11 @@ pub fn check_hits(
                     .unwrap_or("[unnamed]");
                 debug!("Entity {} lost {} health", name, lost);
                 if health.current() == 0.0 {
-                    commands.entity(e2).despawn();
+                    commands.entity(e2).despawn_recursive();
                     debug!("Entity {} died!", name);
                 }
                 if projectile_q.contains(e1) {
-                    commands.entity(e1).despawn();
+                    commands.entity(e1).despawn_recursive();
                 }
             } else if let (Ok((hit_spec, faction2)), Ok((mut health, faction1))) = (hit_box_q.get(e2), health_q.get_mut(e1)) {
                 if faction1 == faction2 {
@@ -142,11 +142,11 @@ pub fn check_hits(
                     .unwrap_or("[unnamed]");
                 debug!("Entity {} lost {} health", name, lost);
                 if health.current() == 0.0 {
-                    commands.entity(e1).despawn();
+                    commands.entity(e1).despawn_recursive();
                     debug!("Entity {} died!", name);
                 }
                 if projectile_q.contains(e2) {
-                    commands.entity(e2).despawn();
+                    commands.entity(e2).despawn_recursive();
                 }
             }
         }

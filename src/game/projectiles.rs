@@ -79,7 +79,7 @@ pub fn update_lifetimes(
     let dt = time.delta();
     for (entity, mut projectile) in projectile_q.iter_mut() {
         if projectile.lifetime.tick(dt).finished() {
-            commands.entity(entity).despawn();
+            commands.entity(entity).despawn_recursive();
         }
     }
 }
