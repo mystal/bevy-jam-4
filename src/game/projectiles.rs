@@ -43,6 +43,10 @@ impl ProjectileBundle {
             ..default()
         };
         let transform = Transform::from_translation(pos.extend(0.0));
+        let color = match faction {
+            Faction::Player => Color::CYAN * 4.0,
+            Faction::Enemy => Color::RED * 4.0,
+        };
         Self {
             name: Name::new("Projectile"),
             projectile: Projectile {
@@ -56,7 +60,7 @@ impl ProjectileBundle {
                 spatial: SpatialBundle::from_transform(transform),
                 ..default()
             },
-            fill: Fill::color(Color::CYAN * 4.0),
+            fill: Fill::color(color),
         }
     }
 }
