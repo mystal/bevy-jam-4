@@ -39,7 +39,7 @@ fn waves_manager(
         let spacing = 100.0;
         for i in 0..10 {
             let entity = commands.spawn((
-                EnemyBundle::new(Vec2::new(x + spacing * i as f32, 400.0)),
+                EnemyBundle::new(Vec2::new(x + spacing * i as f32, 500.0)),
                 ai::SimpleShooterAi::new(3.0, 0.0..=2.0),
                 WaveEntity,
             )).id();
