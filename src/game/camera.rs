@@ -8,7 +8,7 @@ pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app
-            .add_systems(PostUpdate, (
+            .add_systems(Update, (
                 camera_control,
             ));
     }
