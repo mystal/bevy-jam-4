@@ -1,6 +1,6 @@
 use bevy::{prelude::*, window::PrimaryWindow};
 use bevy_egui::{
-    egui::{self, Align2, Color32, ComboBox, Frame, RichText},
+    egui::{self, Align2, Color32, ComboBox, DragValue, Frame, RichText},
     EguiContexts,
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
@@ -10,7 +10,7 @@ use strum::{EnumCount, EnumVariantNames, VariantNames};
 
 use crate::{
     // enemies::spawner::Spawner,
-    game::{ai, enemies, input, units::SwarmParent},
+    game::{ai, enemies, input, units::{self, SwarmParent}},
 };
 
 pub struct DebugPlugin;
@@ -45,11 +45,23 @@ enum PlaceEntityMode {
     Enemy,
 }
 
-#[derive(Default, Resource)]
+#[derive(Resource)]
 struct DebugState {
     enabled: bool,
     show_world_inspector: bool,
+    resize_swarm_count: u32,
     place_entity_mode: PlaceEntityMode,
+}
+
+impl Default for DebugState {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            show_world_inspector: false,
+            resize_swarm_count: 10,
+            place_entity_mode: default(),
+        }
+    }
 }
 
 fn debug_ui_enabled(
@@ -93,13 +105,14 @@ fn debug_menu_bar(
 }
 
 fn debug_ui(
+    mut commands: Commands,
     mut debug_state: ResMut<DebugState>,
     mut egui_ctx: EguiContexts,
-    swarm_q: Query<&Children, With<SwarmParent>>,
+    swarm_q: Query<(Entity, &Children), With<SwarmParent>>,
 ) {
     let ctx = egui_ctx.ctx_mut();
     let swarm_size = swarm_q.get_single()
-        .map(|children| children.len())
+        .map(|(_, children)| children.len())
         .unwrap_or_default();
     let swarm_text = RichText::new(format!("Swarm Size: {}", swarm_size))
         .color(Color32::WHITE)
@@ -113,6 +126,14 @@ fn debug_ui(
             .auto_sized()
             .show(ctx, |ui| {
                 ui.label(swarm_text);
+
+                ui.horizontal(|ui| {
+                    if ui.button("Resize Swarm").clicked() {
+                        units::resize_swarm(&mut commands, &swarm_q, debug_state.resize_swarm_count)
+                    }
+
+                    ui.add(DragValue::new(&mut debug_state.resize_swarm_count));
+                });
 
                 let selected: u8 = debug_state.place_entity_mode.into();
                 let mut selected = selected as usize;

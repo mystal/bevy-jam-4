@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use units::SwarmParent;
+
 pub mod ai;
 pub mod camera;
 pub mod combat;
@@ -33,9 +35,10 @@ impl Plugin for GamePlugin {
 
 fn start_game(
     mut commands: Commands,
+    swarm_q: Query<Entity, With<SwarmParent>>,
 ) {
     camera::spawn_camera(&mut commands, 2.0);
 
     // Spawn swarm
-    units::spawn_swarm(&mut commands);
+    units::spawn_swarm(&mut commands, &swarm_q, 20);
 }

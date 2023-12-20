@@ -100,9 +100,15 @@ impl BasicShooterBundle {
     }
 }
 
-// TODO: Set up a simple boids simulation for the main cluster of ships.
+pub fn spawn_swarm(
+    commands: &mut Commands,
+    swarm_q: &Query<Entity, With<SwarmParent>>,
+    shooters: u32,
+) {
+    if let Ok(entity) = swarm_q.get_single() {
+        commands.entity(entity).despawn_recursive();
+    }
 
-pub fn spawn_swarm(commands: &mut Commands) {
     commands.spawn((
         Name::new("SwarmParent"),
         SwarmParent::new(),
@@ -111,7 +117,7 @@ pub fn spawn_swarm(commands: &mut Commands) {
         SpatialBundle::default(),
         Faction::Player,
     )).with_children(|b| {
-        for _ in 0..100 {
+        for _ in 0..shooters {
             let radius = 150.0;
             let x = (fastrand::f32() * 2.0) - 1.0;
             let y = (fastrand::f32() * 2.0) - 1.0;
@@ -121,10 +127,40 @@ pub fn spawn_swarm(commands: &mut Commands) {
     });
 }
 
+pub fn resize_swarm(
+    commands: &mut Commands,
+    swarm_q: &Query<(Entity, &Children), With<SwarmParent>>,
+    shooters: u32,
+) {
+    if let Ok((entity, children)) = swarm_q.get_single() {
+        if (shooters as usize) > children.len() {
+            // Spawn more shooters.
+            let to_spawn = shooters as usize - children.len();
+            commands.entity(entity).with_children(|b| {
+                for _ in 0..to_spawn {
+                    let radius = 150.0;
+                    let x = (fastrand::f32() * 2.0) - 1.0;
+                    let y = (fastrand::f32() * 2.0) - 1.0;
+                    let pos = Vec2::new(x, y) * radius;
+                    b.spawn(BasicShooterBundle::new(pos));
+                }
+            });
+        } else if (shooters as usize) < children.len() {
+            // Despawn excess children!
+            let to_despawn = children.len() - shooters as usize;
+            for &entity in children.iter().take(to_despawn) {
+                commands.entity(entity).despawn_recursive();
+            }
+        }
+    }
+}
+
 fn shooter_flock_movement(
     parent_q: Query<(&Children, &Transform, &SwarmParent)>,
     mut flock_q: Query<(&mut Transform, &mut Velocity), (With<BasicShooter>, Without<SwarmParent>)>,
 ) {
+    // A simple boids simulation for the main cluster of ships.
+
     // TODO: Get list of children in parent. Do iter_many over those Entities.
     let Ok((children, transform, swarm)) = parent_q.get_single() else {
         return;
