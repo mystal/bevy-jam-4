@@ -1,17 +1,16 @@
 use bevy::{prelude::*, window::PrimaryWindow};
-use bevy_egui::{egui, EguiContexts};
+use bevy_egui::{
+    egui::{self, Align2, Color32, ComboBox, Frame, RichText},
+    EguiContexts,
+};
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
-use bevy_kira_audio::{AudioInstance, AudioSource};
 use bevy_rapier2d::render::{DebugRenderContext, RapierDebugRenderPlugin};
+use num_enum::{IntoPrimitive, FromPrimitive};
+use strum::{EnumCount, EnumVariantNames, VariantNames};
 
 use crate::{
-    AppState,
-    // assets::AudioAssets,
     // enemies::spawner::Spawner,
-    // game::{Bgm, GameTimers},
-    game::{ai, enemies, input},
-    // player::{self, PlayerInput},
-    // weapons::{Weapon, WeaponChoice},
+    game::{ai, enemies, input, units::SwarmParent},
 };
 
 pub struct DebugPlugin;
@@ -28,20 +27,29 @@ impl Plugin for DebugPlugin {
             // Run these before game player input because wants_pointer_input will return false
             // otherwise.
             .add_systems(Update, (
-                debug_ui.run_if(debug_ui_enabled),
+                debug_menu_bar.run_if(debug_ui_enabled),
+                debug_ui,
                 toggle_debug_ui,
                 toggle_physics_debug_render,
-                build_enemy.run_if(build_mode_enabled),
+                place_entity.run_if(place_entity_mode_enabled),
             ).before(input::read_player_input))
             .add_systems(Last, update_mouse_cursor);
     }
+}
+
+#[derive(Clone, Copy, Default, PartialEq, Eq, EnumCount, EnumVariantNames, IntoPrimitive, FromPrimitive)]
+#[repr(u8)]
+enum PlaceEntityMode {
+    #[default]
+    None,
+    Enemy,
 }
 
 #[derive(Default, Resource)]
 struct DebugState {
     enabled: bool,
     show_world_inspector: bool,
-    build_mode: bool,
+    place_entity_mode: PlaceEntityMode,
 }
 
 fn debug_ui_enabled(
@@ -56,13 +64,13 @@ fn show_world_inspector(
     debug_ui.enabled && debug_ui.show_world_inspector
 }
 
-fn build_mode_enabled(
+fn place_entity_mode_enabled(
     debug_ui: Res<DebugState>,
 ) -> bool {
-    debug_ui.enabled && debug_ui.build_mode
+    debug_ui.enabled && debug_ui.place_entity_mode != PlaceEntityMode::None
 }
 
-fn debug_ui(
+fn debug_menu_bar(
     mut debug_state: ResMut<DebugState>,
     mut debug_physics_ctx: ResMut<DebugRenderContext>,
     mut egui_ctx: EguiContexts,
@@ -78,12 +86,52 @@ fn debug_ui(
                 ui.menu_button("Debug", |ui| {
                     ui.checkbox(&mut debug_state.show_world_inspector, "World Inspector");
                     ui.checkbox(&mut debug_physics_ctx.enabled, "Debug Physics Render");
-                    ui.checkbox(&mut debug_state.build_mode, "Build Mode");
+                    // ui.checkbox(&mut debug_state.place_entity_mode, "Place Entity Mode");
                 });
             });
         });
 }
 
+fn debug_ui(
+    mut debug_state: ResMut<DebugState>,
+    mut egui_ctx: EguiContexts,
+    swarm_q: Query<&Children, With<SwarmParent>>,
+) {
+    let ctx = egui_ctx.ctx_mut();
+    let swarm_size = swarm_q.get_single()
+        .map(|children| children.len())
+        .unwrap_or_default();
+    let swarm_text = RichText::new(format!("Swarm Size: {}", swarm_size))
+        .color(Color32::WHITE)
+        .size(20.0);
+
+    if debug_state.enabled {
+        egui::Window::new("temp_side_panel")
+            .anchor(Align2::RIGHT_TOP, (-10.0, 100.0))
+            .title_bar(false)
+            .collapsible(false)
+            .auto_sized()
+            .show(ctx, |ui| {
+                ui.label(swarm_text);
+
+                let selected: u8 = debug_state.place_entity_mode.into();
+                let mut selected = selected as usize;
+                ComboBox::from_label("Place Entity")
+                    .show_index(ui, &mut selected, PlaceEntityMode::COUNT, |i| PlaceEntityMode::VARIANTS[i]);
+                debug_state.place_entity_mode = PlaceEntityMode::from(selected as u8);
+            });
+    } else {
+        egui::Window::new("temp_side_panel")
+            .anchor(Align2::RIGHT_TOP, (-10.0, 100.0))
+            .title_bar(false)
+            .collapsible(false)
+            .frame(Frame::none())
+            .auto_sized()
+            .show(ctx, |ui| {
+                ui.label(swarm_text);
+            });
+    }
+}
 
 fn update_mouse_cursor(
     debug_state: Res<DebugState>,
@@ -124,7 +172,7 @@ fn toggle_physics_debug_render(
     }
 }
 
-fn build_enemy(
+fn place_entity(
     mut commands: Commands,
     mouse_buttons: Res<Input<MouseButton>>,
     mut egui_ctx: EguiContexts,
