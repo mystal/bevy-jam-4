@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::input::mouse::{MouseScrollUnit, MouseWheel};
 use bevy_egui::EguiContexts;
 
@@ -11,6 +12,28 @@ impl Plugin for CameraPlugin {
                 camera_control,
             ));
     }
+}
+
+pub fn spawn_camera(
+    commands: &mut Commands,
+    scale: f32,
+) {
+    commands.spawn((
+        Camera2dBundle {
+            camera: Camera {
+                hdr: true,
+                ..default()
+            },
+            projection: OrthographicProjection {
+                far: 1000.,
+                near: -1000.,
+                scale,
+                ..default()
+            },
+            ..default()
+        },
+        BloomSettings::default(),
+    ));
 }
 
 fn camera_control(

@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::core_pipeline::bloom::BloomSettings;
 
 pub mod ai;
 pub mod camera;
@@ -35,22 +34,7 @@ impl Plugin for GamePlugin {
 fn start_game(
     mut commands: Commands,
 ) {
-    commands.spawn((
-        Camera2dBundle {
-            camera: Camera {
-                hdr: true,
-                ..default()
-            },
-            projection: OrthographicProjection {
-                far: 1000.,
-                near: -1000.,
-                scale: 2.0,
-                ..default()
-            },
-            ..default()
-        },
-        BloomSettings::default(),
-    ));
+    camera::spawn_camera(&mut commands, 2.0);
 
     // Spawn swarm
     units::spawn_swarm(&mut commands);
