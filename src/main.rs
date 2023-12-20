@@ -7,26 +7,15 @@ use bevy_kira_audio::AudioPlugin;
 use bevy_prototype_lyon::plugin::ShapePlugin;
 use bevy_rapier2d::prelude::*;
 
-// mod animation;
-// mod assets;
-// mod combat;
 mod debug;
-// mod enemies;
 mod game;
-// mod health;
 mod log;
 mod physics;
-// mod player;
-// mod terrain;
-// mod ui;
-// mod weapons;
 mod window;
 
 // TODO: Choose a good size for this game.
 // const GAME_SIZE: (f32, f32) = (320.0, 180.0);
 const DEFAULT_SCALE: u8 = 3;
-const GAME_LOGIC_FPS: u8 = 60;
-const GAME_LOGIC_FRAME_TIME: f32 = 1.0 / GAME_LOGIC_FPS as f32;
 const ALLOW_EXIT: bool = cfg!(not(target_arch = "wasm32"));
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, States)]
@@ -92,8 +81,6 @@ fn main() {
         .add_state::<AppState>()
         .add_plugins((
             window::WindowPlugin::new(saved_window_state),
-            // animation::AnimationPlugin,
-            // assets::AssetsPlugin,
             debug::DebugPlugin,
             game::GamePlugin,
             physics::PhysicsPlugin,

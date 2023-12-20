@@ -2,7 +2,6 @@ use bevy::prelude::*;
 
 use crate::{
     game::{
-        enemies::Enemy,
         factions::Faction,
         health::Health,
         projectiles::Projectile,
@@ -96,24 +95,16 @@ impl HurtBoxBundle {
 pub fn check_hits(
     mut commands: Commands,
     mut collisions: EventReader<CollisionEvent>,
-    // mut hits: EventWriter<HitEvent>,
-    // mut player_hits: EventWriter<PlayerHitEvent>,
-    parent_q: Query<&Parent>,
-    // rigid_body_q: Query<&RigidBody>,
     hit_box_q: Query<(&HitSpec, &Faction)>,
     projectile_q: Query<&Projectile>,
-    // hurt_box_q: Query<(), With<HurtBox>>,
-    // player_q: Query<(Entity, &PlayerHealth), With<Player>>,
     mut health_q: Query<(&mut Health, &Faction)>,
     name_q: Query<&Name>,
-    // groups_q: Query<&CollisionGroups>,
 ) {
-    // let (player_entity, health) = player_q.single();
-
-    // Listen for collision events involving a hit box and a hurt box and send a hit event.
+    // Listen for collisions between a hit box and a health component from different factions.
     for collision in collisions.read() {
         // info!("Collision event: {:?}", collision);
         if let &CollisionEvent::Started(e1, e2, _flags) = collision {
+            // TODO: Deduplicate code in the branches.
             if let (Ok((hit_spec, faction1)), Ok((mut health, faction2))) = (hit_box_q.get(e1), health_q.get_mut(e2)) {
                 if faction1 == faction2 {
                     continue;
